@@ -1,0 +1,7 @@
+{
+  "name": "tap-goat",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}

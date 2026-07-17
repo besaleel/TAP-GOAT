@@ -1,0 +1,193 @@
+<ion-content [fullscreen]="true" [scrollY]="false" class="game-content">
+  <div class="game-frame">
+    <canvas #goatCanvas class="goat-canvas"></canvas>
+    <div #overlayEl class="fx-overlay"></div>
+
+    <div class="ui-layer">
+      <div class="header-row">
+        <div class="brand">
+          <img class="brand-icon" src="assets/goat/img/logo.png" alt="Tap Goat" />
+          <div>
+            <div class="brand-title">{{ displayGoatName }}</div>
+            <div class="brand-tagline">{{ t.tagline }}</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" (click)="toggleCoat()" aria-label="coat">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3d16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 000 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-.9.8-1.5 1.7-1.5H16a5 5 0 005-5c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/></svg>
+          </button>
+          <button class="icon-btn lang-btn" (click)="toggleLang()" aria-label="language">{{ lang }}</button>
+          <button class="icon-btn" (click)="openShare()" aria-label="share">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1e3d16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="popover coat-popover" *ngIf="coatOpen">
+        <div class="popover-title">{{ t.coatTitle }}</div>
+        <button class="coat-row" *ngFor="let c of coatOptions" (click)="pickCoat(c.code)">
+          <span class="chip" [style.background]="c.chip">
+            <span class="dot" *ngIf="c.dot" [style.background]="c.dot"></span>
+          </span>
+          {{ t.coats[c.code] }}
+        </button>
+      </div>
+
+      <div class="popover lang-popover" *ngIf="langOpen">
+        <button class="lang-row" *ngFor="let l of langs" (click)="pickLang(l.code)">
+          <span class="flag">{{ l.flag }}</span>{{ l.label }}
+        </button>
+      </div>
+
+      <div class="welcome-badge" *ngIf="!setupVisible">
+        <div class="welcome-title">{{ t.welcomeTitle }}</div>
+        <div class="welcome-sub">{{ t.welcomeSub }}</div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="bottom-area">
+        <div class="ads-column" *ngIf="!purchased">
+          <div class="remove-ads-wrap">
+            <button class="remove-ads-btn" (click)="openPayment()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              {{ t.removeAds }}
+            </button>
+          </div>
+          <div class="native-ad-card" #nativeAdCard>
+            <span class="ad-label">{{ t.adLabel }}</span>
+            <div class="ad-icon" *ngIf="!nativeAd?.iconUri">🚜</div>
+            <img class="ad-icon" *ngIf="nativeAd?.iconUri" [src]="nativeAd!.iconUri" alt="" />
+            <div class="ad-copy-col">
+              <div class="ad-title">{{ nativeAd?.headline || 'FazendaFácil' }}</div>
+              <div class="ad-copy">{{ nativeAd?.body || t.adCopy }}</div>
+            </div>
+            <button class="ad-cta">{{ nativeAd?.callToAction || t.adCta }}</button>
+          </div>
+        </div>
+        <div class="home-indicator"></div>
+      </div>
+    </div>
+
+    <!-- Card de Setup Inicial: sobreposto até o primeiro toque na cabra -->
+    <div class="sheet-backdrop" *ngIf="setupVisible"></div>
+    <div class="setup-card" *ngIf="setupVisible">
+      <button class="setup-close-btn" (click)="startGame()" aria-label="close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8c98a4" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+
+      <img class="brand-icon setup-icon" src="assets/goat/img/logo.png" alt="Tap Goat" />
+      <div class="setup-title">{{ i18n.get(setupLang).welcomeTitle }}</div>
+
+      <div class="setup-langs">
+        <button
+          *ngFor="let l of langs"
+          class="setup-lang-btn"
+          [class.active]="setupLang === l.code"
+          (click)="pickSetupLang(l.code)"
+        >{{ l.flag }} {{ l.label }}</button>
+      </div>
+
+      <label class="setup-toggle-row">
+        <span>{{ setupLang === 'PT' ? 'Som' : (setupLang === 'ES' ? 'Sonido' : 'Sound') }}</span>
+        <button class="toggle" [class.on]="setupSoundOn" (click)="toggleSetupSound()">
+          <span class="knob"></span>
+        </button>
+      </label>
+
+      <div class="setup-name-row">
+        <input
+          class="setup-name-input"
+          type="text"
+          [(ngModel)]="goatName"
+          [placeholder]="setupLang === 'PT' ? 'Nome da cabra (opcional)' : (setupLang === 'ES' ? 'Nombre de la cabra (opcional)' : 'Goat name (optional)')"
+          maxlength="20"
+          (keydown.enter)="startGame()"
+        />
+        <button class="setup-start-btn" (click)="startGame()" aria-label="start">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <div class="setup-hint">
+        {{ setupLang === 'PT' ? 'Toque na cabra ou no botão para começar' : (setupLang === 'ES' ? 'Toca la cabra o el botón para empezar' : 'Tap the goat or the button to start') }}
+      </div>
+
+      <div class="setup-legal">
+        <a (click)="openTerms()">{{ i18n.get(setupLang).termsLabel }}</a>
+        <span class="dot-sep">•</span>
+        <a (click)="openPrivacy()">{{ i18n.get(setupLang).privacyLabel }}</a>
+      </div>
+    </div>
+
+    <!-- Share sheet -->
+    <div class="sheet-backdrop" *ngIf="shareOpen" (click)="closeShare()"></div>
+    <div class="sheet share-sheet" *ngIf="shareOpen">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">{{ t.shareTitle }}</div>
+      <div class="sheet-sub">{{ t.shareSub }}</div>
+      <div class="share-grid">
+        <div class="share-item">
+          <div class="share-icon wa">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 00-8.5 15.3L2 22l4.8-1.5A10 10 0 1012 2zm5.6 14.2c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .2-3.3-.7-2.7-1.1-4.4-3.9-4.5-4.1-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.1c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.4.5c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.4 2.6 1.6.2.1.4 0 .5-.1l.8-.9c.2-.2.4-.2.6-.1l2 1c.2.1.4.2.4.3.1.2.1.6-.1 1.1z"/></svg>
+          </div>
+          <span>WhatsApp</span>
+        </div>
+        <div class="share-item">
+          <div class="share-icon x">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M18.9 2H22l-7 8 8.3 12h-6.5l-5-6.8L5.9 22H2.8l7.5-8.6L2.3 2h6.6l4.6 6.2L18.9 2zm-1.1 18h1.8L7.3 3.8H5.4L17.8 20z"/></svg>
+          </div>
+          <span>X</span>
+        </div>
+        <div class="share-item">
+          <div class="share-icon ig">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="#fff" stroke="none"/></svg>
+          </div>
+          <span>Instagram</span>
+        </div>
+        <div class="share-item">
+          <div class="share-icon more">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5a626b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9h6v6"/><path d="M15 9l-6 6"/></svg>
+          </div>
+          <span>{{ t.more }}</span>
+        </div>
+      </div>
+      <div class="share-url-row">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7a828b" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>
+        <span class="share-url">{{ storeUrl }}</span>
+        <button class="copy-btn" (click)="copyUrl()">{{ copied ? t.copied : t.copyLabel }}</button>
+      </div>
+    </div>
+
+    <!-- Payment sheet -->
+    <div class="sheet-backdrop" *ngIf="paymentOpen" (click)="closePayment()"></div>
+    <div class="sheet payment-sheet" *ngIf="paymentOpen">
+      <div class="sheet-handle"></div>
+      <div class="pay-header">
+        <img class="pay-icon" src="assets/goat/img/logo.png" alt="Tap Goat" />
+        <div>
+          <div class="pay-title">{{ t.payTitle }}</div>
+          <div class="pay-desc">{{ t.payDesc }}</div>
+        </div>
+      </div>
+      <div class="perks">
+        <div class="perk-row" *ngFor="let p of t.perks">
+          <span class="perk-check">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3a7d2c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg>
+          </span>
+          <span>{{ p }}</span>
+        </div>
+      </div>
+      <div class="price-row">
+        <span class="price">{{ t.price }}</span>
+        <span class="one-time">{{ t.oneTime }}</span>
+      </div>
+      <button class="buy-btn" (click)="buy()">{{ t.buyLabel }}</button>
+      <div class="pay-fine">{{ t.payFine }}</div>
+    </div>
+
+    <div class="toast" *ngIf="toast">
+      <span class="toast-emoji">🎉</span>{{ toast }}
+    </div>
+  </div>
+</ion-content>

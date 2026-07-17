@@ -14,7 +14,7 @@ Versão escolhida para implementação: GOAT.dc.html
 - CSS3
 - JavaScript
 - SVG para animações
-- AngularJS para o desenvolvimento do aplicativo webview
+- Angular (Ionic Framework, TypeScript) para o desenvolvimento do aplicativo webview — o Ionic CLI não possui mais starter para AngularJS 1.x (legado, sem suporte desde 2022); decidido usar o Angular moderno suportado oficialmente pelo Ionic
 - IONIC para o desenvolvimento do aplicativo webview
 - Capacitor para o desenvolvimento do aplicativo webview
 
@@ -46,7 +46,9 @@ O anúncio é exibido na parte inferior da tela do aplicativo como um **card nat
 
 Diferente do formato **Banner** (que tem tamanhos fixos padronizados pelo Google, ex. 320x50px), o **Native Ad não tem tamanho fixo em pixels**: o AdMob entrega apenas os *assets* (ícone, título, corpo, imagem, CTA, avaliação) e cada app é responsável por estilizá-los seguindo o próprio layout — exatamente como já foi feito no protótipo. Isso dá mais controle visual, mas exige seguir as [políticas de Native Ads do Google](https://support.google.com/admob/answer/6240814) (o rótulo "Ad"/"Anúncio" e o CTA precisam ficar visíveis e não podem induzir o usuário a clicar por engano).
 
-O ID atualmente referenciado na especificação anterior (`ca-app-pub-3940256099942544/6300978111`) é o **ID de teste padrão do Google para o formato Banner**, e não se aplica a Native Ads. O ID de teste correto para Native Advanced (Android) é `ca-app-pub-3940256099942544/2247696110`. Esse valor deve ser usado **apenas durante o desenvolvimento**, e substituído pelo Ad Unit ID real gerado na conta AdMob do projeto antes da publicação (ver manual abaixo).
+O ID atualmente referenciado na especificação anterior (`ca-app-pub-3940256099942544/6300978111`) é o **ID de teste padrão do Google para o formato Banner**, e não se aplica a Native Ads. O ID de teste correto para Native Advanced (Android) é `ca-app-pub-3940256099942544/2247696110`. Esse valor é usado apenas em desenvolvimento local sem a conta AdMob configurada.
+
+A conta AdMob do projeto já foi criada, com o app cadastrado como **"Tap Goat"** (nome de exibição, igual ao nome definitivo do app — não confundir com `GOAT-MARATIMBA`, que é apenas o nome do repositório/projeto interno). Os IDs reais (App ID e Ad Unit ID nativo) ficam registrados em `DOC/GOOGLE-ADMOB.md`, um arquivo **não versionado** (listado no `.gitignore`, mantido apenas localmente) por conter identificadores de conta. Esses são os valores usados na build de produção; os IDs de teste do parágrafo acima seguem valendo apenas para desenvolvimento local antes de plugar a conta real.
 
 > No HTML do protótipo (`PROJECT/GOAT.dc.html`) o anúncio ainda é apenas um mockup visual (dados estáticos simulando o card do anúncio: "FazendaFácil", ícone 🚜, CTA "Abrir"), sem integração real com o SDK do AdMob. A integração técnica real deverá ser feita via plugin Capacitor, conforme descrito no manual.
 
@@ -64,59 +66,39 @@ Caso o usuário deseje remover o anúncio, irá clicar no texto remover anuncios
 ### 2. Cadastrar o aplicativo no AdMob
 1. No painel do AdMob, vá em **Apps → Adicionar app**.
 2. Informe se o app já está publicado na Google Play Store:
-   - Se **ainda não publicado** (caso do GOAT-MARATIMBA nesta fase inicial): escolha "Não" e preencha manualmente o nome do app (`GOAT-MARATIMBA`) e a plataforma (Android).
+   - Se **ainda não publicado**: escolha "Não" e preencha manualmente o nome do app (`Tap Goat`) e a plataforma (Android).
    - Se já publicado: selecione o app diretamente pela busca da Play Store usando o pacote `com.tapgoat.app`.
 3. Ao concluir, o AdMob gera um **App ID** único, no formato `ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY`. Esse ID é diferente do ID do bloco de anúncio (ad unit) e deve ser configurado no `AndroidManifest.xml` do projeto (ver seção técnica abaixo).
+4. ✅ **Concluído** — app "Tap Goat" já cadastrado; App ID registrado em `DOC/GOOGLE-ADMOB.md` (não versionado).
 
 ### 3. Criar o bloco de anúncio (Ad Unit) do tipo Nativo Avançado
 1. Dentro do app cadastrado, vá em **Blocos de anúncios → Adicionar bloco de anúncios**.
 2. Escolha o formato **Nativo avançado** (Native Advanced) — não "Banner", pois o layout do card (ícone + título + descrição + CTA) exige esse formato.
-3. Dê um nome descritivo, ex.: `GOAT_MARATIMBA_NATIVE_RODAPE`.
+3. Dê um nome descritivo, ex.: `TAP_GOAT_NATIVE_RODAPE`.
 4. Salve. O AdMob gera um **ID de bloco de anúncio**, no formato `ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY` — este é o ID que substitui o ID de teste (`ca-app-pub-3940256099942544/2247696110`) usado durante o desenvolvimento.
 5. Guarde os dois IDs (App ID e Ad Unit ID) em local seguro (ex.: variável de ambiente ou arquivo de configuração não versionado), pois serão usados na integração técnica.
+6. ✅ **Concluído** — bloco `TAP_GOAT_NATIVE_RODAPE` já criado; Ad Unit ID registrado em `DOC/GOOGLE-ADMOB.md` (não versionado).
 
 > **Importante:** um app novo no AdMob passa por um período de "aprendizado"/revisão e pode levar até 24-48h exibindo poucos ou nenhum anúncio real. Use sempre os IDs de teste oficiais do Google durante o desenvolvimento para não violar a política de cliques/impressões inválidas.
 
-### 4. Integração técnica com Capacitor
-O projeto usa Capacitor como camada nativa sobre o webview (Ionic + AngularJS). Anúncios web (`<iframe>`/JS puro) não são permitidos pelas políticas do AdMob para apps — é obrigatório usar o SDK nativo via plugin.
+### 4. Integração técnica com Capacitor (implementada)
+O projeto usa Capacitor como camada nativa sobre o webview (Ionic + Angular). Anúncios web (`<iframe>`/JS puro) não são permitidos pelas políticas do AdMob para apps — é obrigatório usar o SDK nativo via plugin.
 
-**Atenção:** o plugin `@capacitor-community/admob` cobre bem o formato Banner/Interstitial/Rewarded, mas **não tem suporte maduro a Native Ads renderizados com layout customizado** (a Native API do AdMob exige inflar as views nativamente e amarrar cada asset — ícone, título, CTA — a uma `NativeAdView` no Android). Duas abordagens possíveis:
+Confirmado durante a implementação: o plugin `@capacitor-community/admob` cobre bem Banner/Interstitial/Rewarded, mas **não tem suporte a Native Ads customizados** — não existe alternativa de terceiros madura para esse caso. Foi implementada a **Opção A**: um plugin Capacitor customizado em Kotlin.
 
-- **Opção A (recomendada para manter o layout 100% customizado do protótipo):** implementar uma pequena ponte nativa própria (plugin Capacitor customizado em Kotlin) que carrega o `NativeAd` via Google Mobile Ads SDK e expõe os campos (headline, body, icon, callToAction) para o JS via `Capacitor.Plugins`, deixando o HTML/CSS do card renderizar os dados — assim o visual do protótipo é preservado exatamente.
-- **Opção B (mais simples, porém abre mão do layout customizado):** usar um plugin pronto com suporte a Native Ads, como `@outsystems-plugins/admob` ou `capacitor-admob-native-ads` (comunidade), que já renderiza a `NativeAdView` nativa sobreposta ao webview na posição desejada.
+**Arquivos da implementação:**
+- `APK/android/app/src/main/java/com/tapgoat/app/TapGoatAdMobPlugin.kt` — plugin Kotlin que carrega o `NativeAd` via `AdLoader` do Google Mobile Ads SDK (`com.google.android.gms:play-services-ads:23.6.0`, adicionado em `APK/android/app/build.gradle`).
+- `APK/android/app/src/main/java/com/tapgoat/app/MainActivity.kt` — registra o plugin (`registerPlugin(TapGoatAdMobPlugin::class.java)`); convertido de Java para Kotlin (suporte a Kotlin habilitado em `APK/android/build.gradle` e `app/build.gradle` via `apply plugin: 'kotlin-android'`).
+- `APK/src/app/admob.service.ts` — serviço Angular que faz o bridge com o plugin nativo via `registerPlugin` do `@capacitor/core`. Fora de plataforma nativa (`Capacitor.isNativePlatform()` falso, ex. `ng serve` no navegador), os métodos resolvem como no-op, e o card mantém o mockup estático "FazendaFácil" como fallback visual.
+- `APK/src/app/home/home.page.ts`/`.html` — o card do anúncio (`.native-ad-card`) é preenchido com os dados reais (`headline`, `body`, `icon`, `callToAction`) quando `nativeAd` está carregado.
 
-1. Instalar o Google Mobile Ads SDK (via plugin escolhido) e sincronizar:
-   ```bash
-   npm install <plugin-native-ads-escolhido>
-   npx cap sync
-   ```
-2. Configurar o App ID do AdMob nos arquivos nativos Android:
-   - `android/app/src/main/AndroidManifest.xml`, dentro de `<application>`:
-     ```xml
-     <meta-data
-         android:name="com.google.android.gms.ads.APPLICATION_ID"
-         android:value="ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY"/>
-     ```
-3. Inicializar o SDK e carregar o Native Ad no código do app (exemplo conceitual em JavaScript/AngularJS, API pode variar por plugin):
-   ```js
-   import { AdMob } from '<plugin-native-ads-escolhido>';
+**Detalhe crítico de política do Google:** mesmo com o layout 100% desenhado em HTML/CSS, o SDK exige que as views nativas (`headlineView`, `bodyView`, `callToActionView`) estejam registradas em um `NativeAdView` real para que cliques e impressões sejam contabilizados como válidos — não é possível apenas extrair as strings do `NativeAd` e desenhar tudo em HTML sem essa camada nativa por trás. Por isso o plugin mantém um `NativeAdView` transparente, sobreposto exatamente sobre as coordenadas do card HTML (`showAdOverlay`, recalculado via `getBoundingClientRect()` a cada carregamento do anúncio e a cada resize da tela), garantindo que o toque do usuário no card visual chegue ao SDK do Google como um clique válido.
 
-   await AdMob.initialize({
-     testingDevices: ['SEU_ID_DE_DISPOSITIVO_DE_TESTE'],
-     initializeForTesting: true // trocar para false em produção
-   });
+O App ID já está configurado em `AndroidManifest.xml` (`com.google.android.gms.ads.APPLICATION_ID`), e o Ad Unit ID real em `APK/src/environments/environment.prod.ts` (`environment.admob.nativeAdUnitId`). Em desenvolvimento (`environment.ts`), seguem os IDs de teste oficiais do Google (App ID: `ca-app-pub-3940256099942544~3347511713`, Native Ad Unit ID: `ca-app-pub-3940256099942544/2247696110`).
 
-   const nativeAd = await AdMob.loadNativeAd({
-     adId: 'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY', // Ad Unit ID real (ou o ID de teste em dev)
-   });
+Ocultar o anúncio quando o usuário compra "remover anúncios": `buy()` em `home.page.ts` chama `adMob.hideAdOverlay()` além do `*ngIf="!purchased"` já existente no card.
 
-   // Preencher o card do app com os assets retornados:
-   // nativeAd.headline -> {{ adCopy }} / título do anunciante
-   // nativeAd.icon     -> ícone (substitui o 🚜 do protótipo)
-   // nativeAd.callToAction -> {{ adCta }} (texto do botão)
-   ```
-4. Para esconder o card quando o usuário comprar "remover anúncios": simplesmente não chamar `loadNativeAd` e ocultar o container do card via `showAds = false` (já é o comportamento do `<sc-if value="{{ showAds }}">` existente no protótipo, [GOAT.dc.html:95](PROJECT/GOAT.dc.html#L95)).
-5. Durante todo o desenvolvimento e testes, usar exclusivamente o **ID de teste oficial do Google para Native Advanced** (App ID: `ca-app-pub-3940256099942544~3347511713`, Native Ad Unit ID: `ca-app-pub-3940256099942544/2247696110`) para evitar suspensão da conta AdMob por cliques inválidos. Só trocar pelos IDs reais do projeto na build de produção/release.
+**Pendente:** validar em dispositivo/emulador Android real que o clique no `NativeAdView` sobreposto de fato abre o anúncio e que a posição do overlay acompanha corretamente resize/scroll da tela.
 
 ## Manual de Criação de Conta do Google Play Console e Google Play Billing
 
@@ -194,10 +176,23 @@ A tela de abertura **não é uma tela separada**: é a própria tela do jogo (ce
   - Título de boas-vindas com o nome do jogo ("Tap Goat"), traduzido conforme o idioma selecionado no próprio card.
   - Seletor de **idioma** (PT/EN/ES), pré-selecionado com base no idioma do sistema operacional (locale do Android), podendo ser alterado antes de confirmar.
   - Toggle para **habilitar/desabilitar o som**.
-  - Campo de texto **opcional** para o usuário nomear a cabra; se deixado em branco, é usado um nome padrão.
-  - Botão para confirmar e iniciar a interação com o jogo.
-- **Fechamento**: o card de setup permanece visível até o primeiro toque do usuário na cabra — nesse momento ele desaparece com uma transição (fade), a careta e o som são disparados normalmente, e o setup escolhido (idioma, som, nome da cabra) passa a valer para a sessão.
-- Esse fluxo se repete a cada abertura do app (não há gravação de "já visto" — diferente de um onboarding único).
+  - Campo de texto **opcional** para o usuário nomear a cabra; se deixado em branco, é usado um nome padrão. O nome digitado é **persistido localmente** (via Capacitor Preferences, `PlayerPrefsService`) e pré-preenchido automaticamente da próxima vez que o app for aberto — o usuário não precisa redigitar o nome a cada sessão, apenas alterá-lo se quiser.
+  - Botão para confirmar e iniciar a interação com o jogo (também é possível fechar o card tocando no "X" ou no botão de seta ao lado do campo de nome, além do toque direto na cabra).
+- **Fechamento**: o card de setup permanece visível até o usuário confirmar (toque na cabra, no botão de seta, ou no "X") — nesse momento ele desaparece com uma transição (fade), a careta e o som são disparados normalmente (quando fechado via toque na cabra), e o setup escolhido (idioma, som, nome da cabra) passa a valer para a sessão.
+- Esse fluxo (a exibição do card em si) se repete a cada abertura do app (não há gravação de "já visto" — diferente de um onboarding único); apenas o **nome da cabra** é lembrado entre sessões, os demais campos (idioma, som) voltam ao padrão detectado do sistema a cada abertura.
+- **Termos de Uso e Política de Privacidade**: o card de setup também exibe dois links, "Termos de Uso" e "Política de Privacidade", que abrem as respectivas páginas no navegador do dispositivo (fora do app). Esses links são de acesso remoto (exigem conexão à internet) e não afetam a premissa de funcionamento offline do jogo em si, pois o conteúdo do jogo não depende deles para funcionar.
+
+## Termos de Uso e Política de Privacidade
+O aplicativo deve disponibilizar dois documentos legais em HTML, hospedados externamente (fora do pacote do app) e acessados via link a partir da tela de setup:
+
+| Documento | URL |
+|-----------|-----|
+| Termos de Uso | https://contaasbencaos.com.br/tapgoat/termos.html |
+| Política de Privacidade | https://contaasbencaos.com.br/tapgoat/privacidade.html |
+
+- Ambos os arquivos (`termos.html` e `privacidade.html`) devem ser criados e publicados no domínio acima (fora do repositório/pacote do app).
+- Na tela de setup inicial (idioma, som, nome da cabra), devem constar dois links visíveis que abrem essas URLs no navegador do dispositivo.
+- A Política de Privacidade também é exigida pelo processo de publicação na Google Play Console (ver [Manual de Criação de Conta do Google Play Console](#manual-de-criação-de-conta-do-google-play-console-e-google-play-billing)), que já solicitava esse documento durante o onboarding do app na loja.
 
 ## Premisas do Projeto
 - O jogo será desenvolvido para dispositivos Android, com suporte para diferentes tamanhos de tela.

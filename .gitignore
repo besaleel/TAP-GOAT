@@ -1,0 +1,11 @@
+# Builds compilados (gerados localmente/CI, não versionados)
+DEPLOY/*.apk
+DEPLOY/*.aab
+
+# Credenciais/IDs reais do AdMob e Play Billing (dados sensíveis da conta — mantido apenas offline)
+DOC/GOOGLE-ADMOB.md
+DOC/GOOGLE-PlayBilling.md
+
+# Sistema
+.DS_Store
+Thumbs.db
